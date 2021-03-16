@@ -1,5 +1,6 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
+const { up } = require('inquirer/lib/utils/readline');
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -11,7 +12,7 @@ const connection = mysql.createConnection({
   user: 'root',
 
   // Be sure to update with your own MySQL password!
-  password: 'password',
+  password: 'yourRootPassword',
   database: 'greatBayDB',
 });
 
@@ -37,46 +38,48 @@ const init = () => {
     if (userChoice.choice === 'post') {
       createItem();
     } else if (userChoice.choice === 'bid') {
-      updateItem();
+      readItems();
     }
   })
 }
 const createItem = () => {
   inquirer
-              .prompt ([
-                  {
-                      type: 'input',
-                      message: `What are you selling?`,
-                      name: 'product',
-                      validate: checkInput => {
-                          if (checkInput) {
-                              return true;
-                          } else {
-                              console.log(`Please tell us what you are selling!!`)
-                              return false;
-                          }
-                      }
-                  },
-                  {
-                    type: 'list',
-                    message: 'Please choose a category',
-                    name: 'category',
-                    choices: ['home/office', 'electronics', 'outdoor', 'everything else'],
-                  },
-                  {
-                    type: 'input',
-                    message: 'What is the starting bid?',
-                    name: 'startBid',
-                    validate: checkInput => {
-                      if (checkInput) {
-                        return true;
-                      } else {
-                        console.log('Please enter a starting bid!!!')
-                        return false;
-                      }
-                    }
-                  },
-              ])
+.prompt ([
+  {
+    type: 'input',
+    message: `What are you selling?`,
+    name: 'product',
+    validate: checkInput => {
+if (checkInput) {
+  return true;
+} else {
+
+  console.log(`Please tell us what you are selling!!`)
+  return false;
+
+          }
+      }
+  },
+  {
+    type: 'list',
+    message: 'Please choose a category',
+    name: 'category',
+    choices: ['home/office', 'electronics', 'outdoor', 'everything else'],
+  },
+  {
+    type: 'input',
+    message: 'What is the starting bid?',
+    name: 'startBid',
+    validate: checkInput => {
+      if (checkInput) {
+        return true;
+      } else {
+        console.log('Please enter a starting bid!!!')
+        return false;
+      }
+    }
+  },
+])
               .then((response) => {
                 console.log('Inserting a new item...\n');
   const query = connection.query(
@@ -99,16 +102,16 @@ const createItem = () => {
               })
   
 };
-const updateItem = () => {
+const updateItem = (bid,item) => {
   console.log('Updating bid amount...\n');
   const query = connection.query(
     'UPDATE bid SET ? WHERE ?',
     [
       {
-        bid: 'user input',
+        bid: bid,
       },
       {
-        postItem: 'user input',
+        postItem: item,
       },
     ],
   
@@ -116,17 +119,65 @@ const updateItem = () => {
       if (err) throw err;
       console.log(`${res.affectedRows} bid updated!\n`);
       // Call readItems AFTER the UPDATE completes
-      readItems();
+      
     }
     );
 }
   const readItems = () => {
+
     console.log('Selecting all products...\n');
+
     connection.query('SELECT * FROM bid', (err, res) => {
       
       if (err) throw err;
-      // Log all results of the SELECT statement
-      console.log(res);
+
+       inquirer
+          .prompt ([
+              {
+                  type: 'list',
+                  message: `Please select what you would like to bid on`,
+                  name: 'bidOn',
+                  choices() {
+                    const  choiceArray = []
+                    res.forEach(({
+                      postItem
+                    }) => {
+                      choiceArray.push(postItem)
+
+                    });
+                    return choiceArray
+                  }
+              },
+              {
+                type: 'input',
+                message:`Please place your bid`,
+                name:'bidNum',
+                
+                
+              }
+            
+          ]).then(answer =>{
+
+            console.log(answer)
+            
+            const test = connection.query(`SELECT bid FROM bid WHERE postItem = "${answer.bidOn}"`,(err,res)=>{
+
+              if (answer.bidNum < res[0].bid) {
+              
+                console.log('Bid ammount to low')
+                
+              }else{
+                updateItem(answer.bidNum, answer.bidOn)
+              }
+              
+              init()
+
+            })
+
+           
+
+
+          })
       
     });
   };
