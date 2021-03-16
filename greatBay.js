@@ -83,8 +83,6 @@ connection.connect((err) => {
   })
 
 
-  });
-
 
 const postProduct = [];
 
@@ -105,43 +103,6 @@ inquirer
           }
       },
   ])
-  .then(userChoice => {
-      if (userChoice.choice === 'post') {
-          inquirer
-              .prompt ([
-                  {
-                      type: 'input',
-                      message: `What are you selling?`,
-                      name: 'product',
-                      validate: checkInput => {
-                          if (checkInput) {
-                              return true;
-                          } else {
-                              console.log(`Please tell us what you are selling!!`)
-                              return false;
-                          }
-                      }
-                  },
-                  {
-                    type: 'list',
-                    message: 'Please choose a category',
-                    name: 'category',
-                    choices: ['home/office', 'electronics', 'outdoor', 'everything else'],
-                  },
-                  {
-                    type: 'input',
-                    message: 'What is the starting bid?',
-                    name: 'startBid',
-                    validate: checkInput => {
-                      if (checkInput) {
-                        return true;
-                      } else {
-                        console.log('Please enter a starting bid!!!')
-                        return false;
-                      }
-                    }
-                  },
-              ])
               .then (postedProduct => {
                   const newProduct = new Product (postedProduct.product + postedProduct.category + postedProduct.startBid);
                   postProduct.push(newProduct)
